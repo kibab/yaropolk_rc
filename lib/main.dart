@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Yaropolk RC',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Yaropolk RC'),
     );
   }
 }
@@ -48,27 +48,103 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  double _currentSpeed = 0;
+  bool _connectionStatus = false;
+  String _connButtonLabel = "";
 
-  void _incrementCounter() {
+  Widget buildButton(Widget bt) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(40),
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: <Color>[
+                    Color(0xFF0D47A1),
+                    Color(0xFF1976D2),
+                    Color(0xFF42A5F5),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              fixedSize: const Size(100, 100),
+              primary: Colors.white,
+              textStyle: const TextStyle(fontSize: 30),
+            ),
+            onPressed: () {},
+            child: bt, //Text(txt),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String getConnButtonLabel() {
+    return (_connectionStatus == true) ? "Disconnect" : "Connect";
+  }
+
+  void connButtonPressed() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _connectionStatus = !_connectionStatus;
     });
   }
 
+  void pingButtonPressed() {}
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    var logWidget = const TextField(
+      maxLines: 15,
+    );
+
+    var speedSlider = Slider(
+      value: _currentSpeed,
+      max: 10.0,
+      divisions: 10,
+      label: _currentSpeed.toString(),
+      onChanged: (double value) {
+        setState(() {
+          _currentSpeed = value;
+        });
+      },
+    );
+
+    var upButton = buildButton(const Icon(Icons.north));
+    var leftButton = buildButton(const Icon(Icons.west));
+    var rightButton = buildButton(const Icon(Icons.east));
+    var downButton = buildButton(const Icon(Icons.south));
+
+    var connButton = TextButton(
+        onPressed: connButtonPressed, child: Text(getConnButtonLabel()));
+    var pingButton =
+        TextButton(onPressed: pingButtonPressed, child: const Text("Ping"));
+
+    var ctrlRow = Row(
+      children: [connButton, pingButton],
+    );
+
+    var upButtonRow = Padding(
+      padding: const EdgeInsets.symmetric(),
+      child: upButton,
+    );
+
+    var leftRightButtonsRow = Padding(
+        padding: const EdgeInsets.symmetric(),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [leftButton, rightButton],
+        ));
+
+    var downButtonRow = Padding(
+      padding: const EdgeInsets.symmetric(),
+      child: downButton,
+    );
+
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
@@ -76,40 +152,19 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+          // Center is a layout widget. It takes a single child and positions it
+          // in the middle of the parent.
+          child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ctrlRow,
+          logWidget,
+          speedSlider,
+          upButtonRow,
+          leftRightButtonsRow,
+          downButtonRow
+        ],
+      )),
     );
   }
 }
