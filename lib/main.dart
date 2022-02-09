@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yaropolk/yaropolk.dart';
 
 void main() {
   runApp(const MyApp());
@@ -50,9 +51,13 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   double _currentSpeed = 0;
   bool _connectionStatus = false;
-  String _connButtonLabel = "";
+  bool _needScroll = false;
 
-  Widget buildButton(Widget bt) {
+  final _logScrollControl = ScrollController();
+  final List<String> _log = ["one", "two", "three"];
+  final Yaropolk _robot = Yaropolk();
+
+  Widget buildButton(Widget bt, void Function() handler) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(40),
       child: Stack(
@@ -76,8 +81,8 @@ class _MyHomePageState extends State<MyHomePage> {
               primary: Colors.white,
               textStyle: const TextStyle(fontSize: 30),
             ),
-            onPressed: () {},
-            child: bt, //Text(txt),
+            onPressed: handler,
+            child: bt,
           ),
         ],
       ),
@@ -85,23 +90,59 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   String getConnButtonLabel() {
-    return (_connectionStatus == true) ? "Disconnect" : "Connect";
+    return _connectionStatus ? "Disconnect" : "Connect";
+  }
+
+  void _onDataArrived(int data) {
+    print("Data arrived in UI!\n");
+    //_newLogStr = data.toString() + "\n";
+    setState(() {
+      _log.add(data.toString() + "\n");
+      _needScroll = true;
+      //_logController.text += data.toString() + "\n";
+    });
   }
 
   void connButtonPressed() {
+    if (_connectionStatus == false) {
+      _robot.connect(_onDataArrived);
+    } else {
+      _robot.disconnect();
+    }
     setState(() {
       _connectionStatus = !_connectionStatus;
     });
   }
 
-  void pingButtonPressed() {}
+  void pingButtonPressed() {
+    _robot.ping();
+  }
+
+  _scrollLogToBottom() {
+    if (_needScroll) {
+      _logScrollControl.jumpTo(_logScrollControl.position.maxScrollExtent);
+      _needScroll = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    var logWidget = const TextField(
-      maxLines: 15,
+    WidgetsBinding.instance?.addPostFrameCallback((_) => _scrollLogToBottom());
+
+    var logWidgetList = ListView.builder(
+      itemCount: _log.length,
+      controller: _logScrollControl,
+      itemBuilder: (context, index) => SizedBox(
+          height: 20,
+          child: Text(
+            "Log line #" + _log[index].toString(),
+          )),
     );
 
+    var logWidget = SizedBox(
+      height: 300,
+      child: logWidgetList,
+    );
     var speedSlider = Slider(
       value: _currentSpeed,
       max: 10.0,
@@ -114,15 +155,23 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
 
-    var upButton = buildButton(const Icon(Icons.north));
-    var leftButton = buildButton(const Icon(Icons.west));
-    var rightButton = buildButton(const Icon(Icons.east));
-    var downButton = buildButton(const Icon(Icons.south));
+    var upButton =
+        buildButton(const Icon(Icons.north), () => {_robot.moveForward()});
+    var leftButton =
+        buildButton(const Icon(Icons.west), () => {_robot.rotateLeft()});
+    var rightButton =
+        buildButton(const Icon(Icons.east), () => {_robot.rotateRight()});
+    var downButton =
+        buildButton(const Icon(Icons.south), () => {_robot.moveBack()});
 
-    var connButton = TextButton(
-        onPressed: connButtonPressed, child: Text(getConnButtonLabel()));
-    var pingButton =
-        TextButton(onPressed: pingButtonPressed, child: const Text("Ping"));
+    var connButton = Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: ElevatedButton(
+            onPressed: connButtonPressed, child: Text(getConnButtonLabel())));
+    var pingButton = Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: ElevatedButton(
+            onPressed: pingButtonPressed, child: const Text("Ping")));
 
     var ctrlRow = Row(
       children: [connButton, pingButton],
